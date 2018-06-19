@@ -1,0 +1,49 @@
+## Suricata eve json configuration for logstash
+## Glen Dosey
+
+input {
+# Incoming messages will be in json format, one per line
+    syslog {
+	port => 40001
+	codec => "plain"
+	tags => ["suricata"]
+	type => "suricata_via_syslog"
+    }
+}
+
+
+
+filter{
+	if [type] == "suricata_via_syslog" {
+		json{
+			source => "message"
+		}
+		mutate {
+			remove_field => [ "message" ]
+		}
+		if [event_type] == "stats" {
+			mutate { replace => { "type" => "suricata_stats" } }
+		}
+	}
+}
+
+
+output {
+	if [type] == "suricata_via_syslog" {
+		elasticsearch {
+			hosts => ["localhost:9200"] 
+			user => elastic
+			password => changeme
+			index => "suricata-%{+YYYY.MM.dd}"
+		}
+	}
+	if [type] == "suricata_stats" {
+		elasticsearch {
+			hosts => ["localhost:9200"] 
+			user => elastic
+			password => changeme
+			index => "suricata_stats-%{+YYYY.MM.dd}"
+		}
+	}
+}
+
