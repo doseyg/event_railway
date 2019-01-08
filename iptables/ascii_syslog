@@ -1,0 +1,2 @@
+iptables -A INPUT -i lo -p udp -m udp --dport 515 -m string --string "/^.{27}.+([\x7f-\xff]){3,}/smi" --algo pcre -j LOG
+## yum install dkms; git clone https://github.com/xnsystems/kpcre.git; mv kpcre /usr/src/kpcre-1.0.0; dkms add kpcre/1.0.0; dkms build kpcre/1.0.0; dkms install kpcre/1.0.0
