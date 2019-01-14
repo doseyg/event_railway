@@ -1,0 +1,14 @@
+output {
+	if [sendto_index] {
+		elasticsearch {
+			hosts => ["127.0.0.1"]
+			index => "%{sendto_index}-%{+YYYY.MM.DD}"
+		}
+	}
+	else {
+		elasticsearch {
+			hosts => ["127.0.0.1"]
+			index => "catchall-%{+YYYY.MM.DD}"
+		}
+	}
+}
