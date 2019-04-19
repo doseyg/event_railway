@@ -1,0 +1,18 @@
+winrm qc
+wecutil qc
+
+Server=http://hostname:5985/wsman/SubscriptionManager/WEC,Refresh=60
+
+dsacls “CN=AdminSDHolder,CN=System,DC=yourdomainname,DC=tld” /G “S-1-5-20:WS;Validated write to service principal name”
+
+
+### Load .man file to C:\ECMan
+
+cd\ECMan
+"C:\Program Files (x86)\Windows Kits\8.1\bin\x64\mc.exe" C:\ECMan\CustomEventChannels.man
+"C:\Program Files (x86)\Windows Kits\8.1\bin\x64\mc.exe" -css CustomEventChannels.DummyEvent C:\ECMan\CustomEventChannels.man
+"C:\Program Files (x86)\Windows Kits\8.1\bin\x64\rc.exe" C:\ECMan\CustomEventChannels.rc
+"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /win32res:C:\ECMan\CustomEventChannels.res /unsafe /target:library /out:C:\ECMan\CustomEventChannels.dll C:\ECMan\CustomEventChannels.cs
+
+### Copy .man and .dll to server and run
+wevtutil im c:\Windows\system32\CustomEventChannels.man
