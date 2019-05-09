@@ -1,0 +1,41 @@
+---
+- hosts: localhost
+  connection: local
+  vars_prompt:
+  - name: "esxi root password"
+    prompt: "Enter your password to esxi"
+    private: yes
+  tasks:
+  - vsphere_guest:
+      vcenter_hostname: esxi
+      validate_certs: false
+      username: root
+      password: password
+      guest: test-vm
+      state: powered_on
+      vm_extra_config:
+        vcpu.hotadd: yes
+        mem.hotadd:  yes
+        notes: This is a test VM created from ansible 
+      vm_disk:
+        disk1:
+          size_gb: 10
+          type: thin
+          datastore: datastore1
+          folder: test
+      vm_nic:
+        nic1:
+          type: vmxnet3
+          network: VM Network
+          network_type: standard
+      vm_hardware:
+        memory_mb: 2048
+        num_cpus: 2
+        osid: centos7_64Guest
+        scsi: paravirtual
+        vm_cdrom:
+          type: "iso"
+          iso_path: "datastore1/ISO/CentOS-7.0-x86_64-DVD-1511.iso"
+      esxi:
+        datacenter: ha-datacenter
+        hostname: esxi
