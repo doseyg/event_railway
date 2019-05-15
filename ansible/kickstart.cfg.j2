@@ -1,0 +1,71 @@
+#version=2017-11-13
+# System authorization information
+auth --enableshadow --passalgo=sha512
+install
+# Use CDROM installation media
+cdrom
+#url --url http://mirror/centos/7/os/x86_64/
+# Use graphical install
+graphical
+# Run the Setup Agent on first boot
+firstboot --disable
+ignoredisk --only-use=sda
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+ 
+# Network information
+network  --bootproto=dhcp --device= --onboot=off --ipv6=auto
+network  --hostname={{ inventory_hostname }}
+ 
+# Root password
+rootpw your_password_here
+# System services
+services --disabled="chronyd"
+# System timezone
+timezone Etc/UTC --isUtc --nontp
+# System bootloader configuration
+bootloader --append=" crashkernel=auto" --location=mbr --boot-drive=sda
+# Partition clearing information
+clearpart --all --initlabel
+zerombr
+# Disk partitioning information
+part /boot --fstype="ext4" --ondisk=sda --size=512
+part pv.319 --fstype="lvmpv" --ondisk=sda --size=11784
+volgroup vg --pesize=4096 pv.319
+logvol swap  --fstype="swap" --size=1024 --name=swap --vgname=vg
+logvol /tmp  --fstype="xfs" --size=1024 --name=tmp --vgname=vg
+logvol /home  --fstype="xfs" --size=512 --name=home --vgname=vg
+logvol /  --fstype="xfs" --size=3072 --label="root" --name=root --vgname=vg
+logvol /var/log/audit  --fstype="xfs" --size=1024 --name=var_log_audit --vgname=vg
+logvol /var/log  --fstype="xfs" --size=1024 --name=var_log --vgname=vg
+logvol /usr  --fstype="xfs" --size=3072 --name=usr --vgname=vg
+logvol /var  --fstype="xfs" --size=1024 --name=var --vgname=vg
+ 
+%packages
+@^minimal
+@core
+aide
+net-tools
+kexec-tools
+openscap
+openscap-scanner
+scap-security-guide
+ 
+%end
+ 
+#%addon com_redhat_kdump --enable --reserve-mb='auto'
+#%end
+ 
+#%anaconda
+#pwpolicy root --minlen=6 --minquality=50 --notstrict --nochanges --notempty
+#pwpolicy user --minlen=6 --minquality=50 --notstrict --nochanges --notempty
+#pwpolicy luks --minlen=6 --minquality=50 --notstrict --nochanges --notempty
+#%end
+ 
+%post --log=/root/ks-post.log
+echo 'tty1' >> /etc/securetty
+# Install any specific packages here
+%end
+ 
