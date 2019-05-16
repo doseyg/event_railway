@@ -1,0 +1,36 @@
+- hosts: test
+  become: no
+
+  vars:
+    github_repo: "https://github.com/user/repo/"
+
+  tasks:
+  - name: install logstash
+    package:
+     name: logstash
+     state: present
+
+  - command: mktemp -d
+    delegate_to: localhost
+    register: tempdir
+
+  - name: download latest configurations from Git
+    git:
+     repo: "{{ github_repo }}"
+     dest: "{{ tempdir.stdout }}"
+    delegate_to: localhost
+
+  - name: copy logstash config
+    copy:
+     src: "{{ tempdir.stdout }}/logstash/"
+     dest: /etc/logstash/conf.d/
+     owner: logstash
+     group: logstash
+     mode: 0644
+
+  - name: cleanup temp directories
+    when: False
+    file:
+      path: "{{ tempdir.stdout }}"
+      state: absent
+
