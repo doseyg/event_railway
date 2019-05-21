@@ -3,12 +3,37 @@
 
   vars:
     github_repo: "https://github.com/user/repo/"
+    tempdir: /root/ansible/src/
+    elasticsearch_master: http://node:9200
 
   tasks:
   - name: install logstash
     package:
-     name: logstash
-     state: present
+      name: logstash
+      state: present
+
+  - name: install Java
+    package:
+      name: java
+      state: present
+
+  - name: install logstash startup script
+    shell: /usr/share/logstash/bin/system-install
+     
+  - name: install GeoIP
+    package:
+      name: GeoIP
+      state: present     
+
+  - name: install GeoIP-data
+    package:
+      name: GeoIP-data
+      state: present  
+     
+  - name: install geolite2-city
+    package:
+      name: geolite2-city
+      state: present       
 
   - command: mktemp -d
     delegate_to: localhost
@@ -16,21 +41,84 @@
 
   - name: download latest configurations from Git
     git:
-     repo: "{{ github_repo }}"
-     dest: "{{ tempdir.stdout }}"
+      repo: "{{ github_repo }}"
+      dest: "{{ tempdir.stdout }}"
     delegate_to: localhost
+    
+  - name: template logstash config
+    template:
+      src: "{{ tempdir }}/logstash/logstash.yml.j2"
+      dest: /etc/logstash/logstash.yml
 
-  - name: copy logstash config
+  - name: copy logstash conf.d configs
     copy:
-     src: "{{ tempdir.stdout }}/logstash/"
-     dest: /etc/logstash/conf.d/
-     owner: logstash
-     group: logstash
-     mode: 0644
+      src: "{{ item }}"
+      dest: /etc/logstash/conf.d/
+      owner: logstash
+      group: logstash
+      mode: 0644
+    with_fileglob:
+      - "{{ tempdir }}/logstash/conf.d/.conf"
+      
+  - name: template logstash conf.d configs
+    template:
+      src: "{{ item }}"
+      dest: /etc/logstash/conf.d/{{item | basename | regex_replace('\.j2','') }}
+    with_fileglob: "{{ tempdir }}/logstash/conf.d/*.j2"
 
   - name: cleanup temp directories
     when: False
     file:
       path: "{{ tempdir.stdout }}"
       state: absent
+      
+  - name: Update JVM options
+    lineinfile:
+      dest: /etc/logstash/jvm.options
+      regexp: "-Xms.*"
+      line: "-Xms16g"
+      create: yes
+      
+  - name: Update JVM options
+    lineinfile:
+      dest: /etc/logstash/jvm.options
+      regexp: "-Xmx.*"
+      line: "-Xmx16g"
+      create: yes
+      
+  - name: Open IPtables udp 514
+    lineinfile:
+      dest: /etc/sysconfig/iptables
+      insertbefore: '^-A INPUT -j REJECT'
+      regexp: "-A INPUT.*-m udp.*--dport 514.*"
+      line: "-A INPUT -p udp -m state --state NEW -m udp --dport 514 -j ACCEPT"
+      create: yes     
+      
+  - name: Open IPtables tcp 514
+    lineinfile:
+      dest: /etc/sysconfig/iptables
+      insertbefore: '^-A INPUT -j REJECT'
+      regexp: "-A INPUT.*-m tcp.*--dport 514.*"
+      line: "-A INPUT -p tcp -m state --state NEW -m tcp --dport 514 -j ACCEPT"
+      create: yes
+      
+  - name: Allow Java to bind to 514 for logstash
+    copy:
+      dest: /etc/rc.local
+      content: |
+        find /usr/lib/jvm -type f -name java -exec setcap cap_net_bind_service=+epi {} \;
+        find /usr/lib/jvm -type f -name libjli.so -exec setcap cap_net_bind_service=+epi {} \;
+        find /usr/lib/jvm -type d -name jli -exec ls -d {} >> /etc/ld.so.cond.d/java.conf \;
+        
+  - name: restart iptables
+    service:
+      name: iptables
+      state: restarted     
 
+  - name: restart logstash
+    service:
+      name: logstash
+      state: restarted
+      
+  - name: enable logstash at boot
+    shell: chkconfig logstash on
