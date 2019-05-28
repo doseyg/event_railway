@@ -1,0 +1,52 @@
+---
+- pause:
+    prompt: "Please ensure the ESXi 6.5 CD is loaded"
+
+- name: Create ISOs directory if it does not exist
+  file:
+    path: /var/www/html/ISOs/
+    state: directory
+    mode: '0755'
+
+- name: Copy CD to ISO image
+  command: dd if=/dev/cdrom of=/var/www/html/ISOs/esxi-6.5.iso
+
+- command: mktemp -d
+  delegate_to: localhost
+  register: loopdir
+
+- name: mount source iso image
+  command: mount -o loop "/var/www/html/ISOs/esxi-6.5.iso" "{{ loopdir.stdout }}"
+  delegate_to: localhost
+
+- name: Create a esxi if it does not exist
+  file:
+    path: /var/www/html/esxi/
+    state: directory
+    mode: '0755'
+
+- name: Create a esxi 6.5 if it does not exist
+  file:
+    path: /var/www/html/esxi/6.5
+    state: directory
+    mode: '0755'
+
+- name: Create a centos7 if it does not exist
+  file:
+    path: /var/lib/tftpboot/esxi-6.5
+    state: directory
+    mode: '0755'
+
+- name: setup repository
+  command: cp -a "{{ loopdir.stdout }}"  /var/www/html/esxi/6.5
+
+- name: copy files for PXE boot
+  command: cp -a "{{ loopdir.stdout }}/{{ item }}"  /var/lib/tftpboot/esxi-6.5/
+  with_items:
+    - mboot.c32
+    - boot.cfg
+    - efi/boot/bootx64.efi 
+
+- name: unmount source iso image
+  command: umount "{{ loopdir.stdout }}"
+  delegate_to: localhost

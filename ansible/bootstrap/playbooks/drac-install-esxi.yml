@@ -1,0 +1,58 @@
+- hosts: all
+  connection: local
+  become: no
+
+  vars:
+    drac_username: root
+    drac_password: calvin
+    iso_image: /root/ansible/VMware-VMvisor-Installer-6.7.0-8169922.x86_64.iso
+    my_ip: hostvars[inventory_hostname]['ansible_default_ipv4']['address']
+
+  tasks:
+  - command: mktemp -d
+    delegate_to: localhost
+    register: tempdir
+
+  - command: mktemp -d
+    delegate_to: localhost
+    register: loopdir
+
+  - name: mount source iso image
+    command: mount -o loop "{{ iso_image }}" "{{ loopdir.stdout }}"
+    delegate_to: localhost
+
+  - name: copy source iso image contents to custom iso
+    shell: cp -a -R "{{ loopdir.stdout }}"/. "{{ tempdir.stdout }}"
+    delegate_to: localhost
+
+  - name: create kickstart file on custom iso
+    delegate_to: localhost
+    template:
+      src: "{{ playbook_dir }}/templates/esxi-kickstart.cfg.j2"
+      dest: "{{ tempdir.stdout }}/ks.cfg"
+
+  - name: Update boot options
+    command: sed -i 's/kernelopt=cdromBoot runweasel/kernelopt=runweasel ks=cdrom:\/KS.cfg/' "{{ tempdir.stdout }}"/boot.cfg
+    delegate_to: localhost
+
+  - name: create iso image
+    command: genisoimage -relaxed-filenames -J -R -o /var/www/html/{{ inventory_hostname }}.iso -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efiboot.img -no-emul-boot  {{ tempdir.stdout }}
+    delegate_to: localhost
+
+  - name: add md5sum to iso
+    command: implantisomd5 /var/www/html/{{ inventory_hostname }}.iso
+    delegate_to: localhost
+
+  - name: unmount source iso image
+    command: umount "{{ loopdir.stdout }}"
+    delegate_to: localhost
+
+  - name: mount virtual iso image
+    when: False
+    command: "{{ playbook_dir }}/redfish/InsertEjectVirtualMediaREDFISH.py -ip {{ inventory_hostname }} -u {{ drac_username}} -p {{ drac_password }} -o 1 -d 1 -i http://hostvars[inventory_hostname]['ansible_default_ipv4']['address']/{{ inventory_hostname }}.iso"
+    delegate_to: localhost
+
+  - name: boot to virtual iso image
+    when: False
+    command: "{{ playbook_dir }}/redfish/SetNextOneTimeBootVirtualMediaDeviceOemREDFISH.py -ip {{inventory_hostname }} {{ drac_username}} -p {{ drac_password }} -d 1 -r y"
+delegate_to: localhost

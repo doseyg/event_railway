@@ -1,0 +1,19 @@
+option domain-name "example.org";
+option domain-name-servers ns1.example.org, ns2.example.org;
+default-lease-time 600;
+max-lease-time 7200;
+ddns-update-style none;
+authoritative;
+allow booting;
+allow bootp;
+allow unknown-clients;
+log-facility local7;
+
+
+subnet {{ hostvars[inventory_hostname]["ansible_default_ipv4"]["network"] }} netmask {{ hostvars[inventory_hostname]["ansible_default_ipv4"]["netmask"] }} {
+	range {{ hostvars[inventory_hostname]["ansible_default_ipv4"]["network"] }} {{ hostvars[inventory_hostname]["ansible_default_ipv4"]["broadcast"] }};
+	next-server {{ hostvars[inventory_hostname]["ansible_default_ipv4"]["address"] }};
+	filename "pxelinux/pxelinux.0";
+}
+
+

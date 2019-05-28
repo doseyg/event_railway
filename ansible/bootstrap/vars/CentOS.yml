@@ -1,0 +1,26 @@
+# roles/pxeserver/vars/main.yml
+---
+
+
+
+pxeserver_packages:
+  - tftp
+  - tftp-server
+  - dhcp
+  - syslinux
+  - vsftpd
+  - httpd
+  - memtest86+
+
+pxeserver_services:
+  - dhcpd
+  - httpd
+  - vsftpd
+  - tftp
+
+pxeserver_files:
+  - /usr/share/syslinux/pxelinux.0
+  - /usr/share/syslinux/menu.c32
+  - /usr/share/syslinux/memdisk
+  - /usr/share/syslinux/mboot.c32
+  - /usr/share/syslinux/chain.c32

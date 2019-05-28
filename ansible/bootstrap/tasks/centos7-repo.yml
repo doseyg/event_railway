@@ -1,0 +1,50 @@
+---
+- pause:
+    prompt: "Please ensure the CentOS 7 Full DVD is loaded"
+
+- set_fact: iso_image = "centos7"
+
+- name: Create ISOs directory
+  file:
+    path: /var/www/html/ISOs
+    state: directory
+    mode: '0755'
+
+- name: Copy CD to ISO image
+  command: dd if=/dev/cdrom of=/var/www/html/ISOs/centos7.iso
+
+- command: mktemp -d
+  delegate_to: localhost
+  register: loopdir
+
+- name: mount source iso image
+  command: mount -o loop "/var/www/html/ISOs/centos7.iso" "{{ loopdir.stdout }}"
+  delegate_to: localhost
+
+- name: Create a centos directory if it does not exist
+  file:
+    path: /var/www/html/centos
+    state: directory
+    mode: '0755'
+
+- name: Create a centos 7 directory if it does not exist
+  file:
+    path: /var/www/html/centos/7
+    state: directory
+    mode: '0755'
+
+- name: Create a centos7 tftp directory if it does not exist
+  file:
+    path: /var/lib/tftpboot/centos7
+    state: directory
+    mode: '0755'
+
+- name: setup centos7 web mirror
+  command: cp -a "{{ loopdir.stdout }}"  /var/www/html/centos/7/
+
+- name: copy files for PXE boot
+  command: cp -a "{{ loopdir.stdout }}/isolinux/"  /var/lib/tftpboot/centos7
+
+- name: unmount source iso image
+  command: umount "{{ loopdir.stdout }}"
+  delegate_to: localhost

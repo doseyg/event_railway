@@ -1,0 +1,73 @@
+# roles/pxeserver/tasks/main.yml
+---
+
+- include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+
+
+- name: Install packages
+  package:
+    name: "{{ item }}"
+    state: installed
+  with_items: "{{ pxeserver_packages }}"
+
+- name: Create directory for PXEboot related files
+  file:
+    path: "{{ pxeserver_path }}"
+    state: directory
+
+- name: Create directory for memtest related files
+  file:
+    path: "{{ tftp_root_directory }}/memtest"
+    state: directory
+
+- name: copy memtest86+ files over
+  shell: cp /boot/memtest* {{ tftp_root_directory }}/memtest/memtest
+
+- name: copy elf-memtest86+ files over
+  shell: cp /boot/elf-memtest* {{ tftp_root_directory }}/memtest/elf-memtest
+
+- name: Make Network Boot Programs for BIOS and UEFI based systems available
+  command: cp "{{ item }}" "{{ pxeserver_path }}/{{ item|regex_replace('.*/', '') }}"
+  args:
+    creates: "{{ pxeserver_path }}/{{ item|regex_replace('.*/', '') }}"
+  with_items: "{{ pxeserver_files }}"
+
+
+- name: Create directory for PXE server configuration
+  file:
+    path: "{{ pxeserver_path }}/pxelinux.cfg"
+    state: directory
+
+- name: Create default menu for BIOS based systems
+  template:
+    src: pxelinux.cfg_default
+    dest: "{{ pxeserver_path }}/pxelinux.cfg/default"
+
+
+- name: DHCP configuration for PXE server
+  template:
+    src: dhcpd.conf.j2
+    dest: /etc/dhcp/dhcpd.conf
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Enable TFTP Server
+  lineinfile:
+      dest: /etc/xinetd.d/tftp
+      regexp: ".*disable.*=.*yes"
+      line: "\tdisable = no"
+      create: yes
+
+- name: Ensure services are started
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  with_items: "{{ pxeserver_services }}"
+
+- import_tasks: centos7-repo.yml
+- import_tasks: esxi-repo.yml
