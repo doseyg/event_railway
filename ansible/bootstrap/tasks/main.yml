@@ -3,6 +3,7 @@
 
 - include_vars: "{{ item }}"
   with_first_found:
+    - "local_vars.yml"
     - "{{ ansible_distribution }}.yml"
     - "{{ ansible_os_family }}.yml"
 
@@ -20,14 +21,14 @@
 
 - name: Create directory for memtest related files
   file:
-    path: "{{ tftp_root_directory }}/memtest"
+    path: "{{ tftp_root_dir }}/memtest"
     state: directory
 
 - name: copy memtest86+ files over
-  shell: cp /boot/memtest* {{ tftp_root_directory }}/memtest/memtest
+  shell: cp /boot/memtest* {{ tftp_root_dir }}/memtest/memtest
 
 - name: copy elf-memtest86+ files over
-  shell: cp /boot/elf-memtest* {{ tftp_root_directory }}/memtest/elf-memtest
+  shell: cp /boot/elf-memtest* {{ tftp_root_dir }}/memtest/elf-memtest
 
 - name: Make Network Boot Programs for BIOS and UEFI based systems available
   command: cp "{{ item }}" "{{ pxeserver_path }}/{{ item|regex_replace('.*/', '') }}"

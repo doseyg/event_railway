@@ -1,0 +1,94 @@
+## This playbook expects the following vars:
+## drac_username - Dell default is root
+## drac_password - Dell default is calvin
+## tftp_root_dir - typically /var/lib/tftboot
+## web_root_dir - typically /var/www/html
+## esxi_ver - the version of ESXi, used to create folders for files
+
+## This playbook expects the following:
+##  - localhost is the DHCP, TFTP, and HTTP server
+##  - contents of the ESXi CD are in {{web_root_dir}}/{{esxi_ver}} folder
+##  - pxelinux boot files are in {{tftp_root_dir}}/pxelinux folder
+##  - esxi boot files are in {{tftp_root_dir}}/{{esxi_ver}}
+
+## This playbook works with iDRAC versions 7/8/9 
+---
+- hosts: all
+- tasks:
+  - include_vars: local_vars.yml
+    delegate_to: localhost
+
+  - name: Get eth1 MAC address via DRAC
+    delegate_to: localhost
+    uri:
+      url: "https://{{ ansible_host }}/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/NIC.Embedded.1-1-1"
+      user: "{{ drac_username }}"
+      password: "{{ drac_password }}"
+      method: GET
+      force_basic_auth: yes
+      validate_certs: no
+      status_code: 200
+    register: drac_nic_info
+
+  - name: Ensure tftp_root_dir pxelinux/pxelinux.cfg/ dir exists
+    delegate_to: localhost
+    file:
+      path: "{{ tftp_root_dir }}/pxelinux/pxelinux.cfg/"
+      state: directory                
+
+  - name: Ensure web_root_dir kickstart exists
+    delegate_to: localhost
+    file:
+      path: "{{ web_root_dir }}/kickstart/"
+      state: directory    
+   
+  - name: Create pxelinux.cfg file
+    delegate_to: localhost
+    copy:
+      dest: "{{ tftp_root_dir }}/pxelinux/pxelinux.cfg/01-{{ drac_nic_info.MACAddress | replace(':','-')| lower  }}"
+      content: |
+        DEFAULT menu.c32
+        MENU TITLE {{ esxi_ver }} Boot Menu
+        NOHALT 1
+        PROMPT 0
+        TIMEOUT 10
+        LABEL install
+          KERNEL ../{{ esxi_ver }}/mboot.c32
+          APPEND -c  ../{{ esxi_ver }}/{{ drac_nic_info.MACAddress | replace(':','-')| lower  }}.cfg
+        MENU LABEL {{ esxi_ver }} Installer
+   
+  - name: Create esxi boot.cfg file
+    delegate_to: localhost
+    template:
+        src: "{{ playbook_dir }}/templates/esxi-boot.cfg.j2"
+        dest: "{{ tftp_root_dir }}/{{ esxi_ver }}/{{ drac_nic_info.MACAddress | replace(':','-')| lower  }}.cfg"
+                                 
+  - name: Create esxi kickstart.cfg file
+    delegate_to: localhost
+    template:
+        src: "{{ playbook_dir }}/templates/esxi-kickstart.cfg.j2"
+        dest: "{{ web_root_dir }}/kickstart/{{ drac_nic_info.MACAddress | replace(':','-')| lower  }}.cfg"
+                   
+  - name: Set one time boot to PXE via DRAC
+    uri:
+      url: "https://{{ ansible_host }}/redfish/v1/Systems/System.Embedded.1"
+      user: "{{ drac_username }}"
+      password: "{{ drac_password }}"
+      method: PATCH
+      force_basic_auth: yes
+      validate_certs: no
+      status_code: 200
+      body_format: json
+      body: '{"Boot":{"BootSourceOverrideTarget":"Pxe","BootSourceOverrideEnabled":"Once"}}'
+
+  - name: Restart the server via DRAC
+    uri:
+      url: "https://{{ ansible_host }}/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
+      user: "{{ drac_username }}"
+      password: "{{ drac_password }}"
+      method: POST
+      force_basic_auth: yes
+      validate_certs: no
+      status_code: 204
+      body_format: json
+      body: '{"ResetType":"GracefulRestart"}'

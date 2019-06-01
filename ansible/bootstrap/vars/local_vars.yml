@@ -1,0 +1,33 @@
+# roles/pxeserver/vars/main.yml
+---
+tftp_root_dir: "/var/lib/tftpboot/"
+web_root_dir: "/var/www/html/"
+pxeserver_dir: "pxelinux"
+pxeserver_path: "{{ tftp_root_dir }}/{{ pxeserver_dir }}"
+pxeserver_ip: "{{ ansible_default_ipv4.address }}"
+drac_username: root
+drac_password: calvin
+centos_ver: "centos7"
+esxi_ver: "esxi-6.5"
+
+pxeserver_packages:
+  - tftp
+  - tftp-server
+  - dhcp
+  - syslinux
+  - vsftpd
+  - httpd
+  - memtest86+
+
+pxeserver_services:
+  - dhcpd
+  - httpd
+  - vsftpd
+  - tftp
+
+pxeserver_files:
+  - /usr/share/syslinux/pxelinux.0
+  - /usr/share/syslinux/menu.c32
+  - /usr/share/syslinux/memdisk
+  - /usr/share/syslinux/mboot.c32
+  - /usr/share/syslinux/chain.c32

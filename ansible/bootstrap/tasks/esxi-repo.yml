@@ -1,47 +1,46 @@
 ---
+## This playbook expects the following vars:
+## tftp_root_dir - typically /var/lib/tftboot
+## web_root_dir - typically /var/www/html
+## esxi_ver - the label for this version of ESXi, used to create folders for files, typically esxi-6.5
+
 - pause:
-    prompt: "Please ensure the ESXi 6.5 CD is loaded"
+    prompt: "Please ensure the ESXi CD is loaded"
 
 - name: Create ISOs directory if it does not exist
   file:
-    path: /var/www/html/ISOs/
+    path: "{{ web_root_dir}}/ISOs/"
     state: directory
     mode: '0755'
 
 - name: Copy CD to ISO image
-  command: dd if=/dev/cdrom of=/var/www/html/ISOs/esxi-6.5.iso
+  command: dd if=/dev/cdrom of={{ web_root_dir }}/ISOs/{{ esxi_ver }}.iso
 
 - command: mktemp -d
   delegate_to: localhost
   register: loopdir
 
 - name: mount source iso image
-  command: mount -o loop "/var/www/html/ISOs/esxi-6.5.iso" "{{ loopdir.stdout }}"
+  command: mount -o loop "{{ web_root_dir }}/ISOs/{{ esxi_ver }}.iso" "{{ loopdir.stdout }}"
   delegate_to: localhost
 
-- name: Create a esxi if it does not exist
+- name: Create a esxi_ver if it does not exist
   file:
-    path: /var/www/html/esxi/
+    path: "{{ web_root_dir }}/{{ esxi_ver }}"
     state: directory
     mode: '0755'
 
-- name: Create a esxi 6.5 if it does not exist
+- name: Create esxi_ver dir in tftp_root_dir if it does not exist
   file:
-    path: /var/www/html/esxi/6.5
-    state: directory
-    mode: '0755'
-
-- name: Create a centos7 if it does not exist
-  file:
-    path: /var/lib/tftpboot/esxi-6.5
+    path: "{{ tftp_root_dir }}/{{ esxi_ver }}"
     state: directory
     mode: '0755'
 
 - name: setup repository
-  command: cp -a "{{ loopdir.stdout }}"  /var/www/html/esxi/6.5
+  command: cp -au "{{ loopdir.stdout }}/."  "{{ web_root_dir}}/{{ esxi_ver }}"
 
 - name: copy files for PXE boot
-  command: cp -a "{{ loopdir.stdout }}/{{ item }}"  /var/lib/tftpboot/esxi-6.5/
+  command: cp -au "{{ loopdir.stdout }}/{{ item }}"  "{{ tftp_root_dir }}/{{ esxi_ver }}/"
   with_items:
     - mboot.c32
     - boot.cfg

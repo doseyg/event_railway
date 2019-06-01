@@ -1,49 +1,46 @@
 ---
-- pause:
-    prompt: "Please ensure the CentOS 7 Full DVD is loaded"
+## This playbook expects the following vars:
+## tftp_root_dir - typically /var/lib/tftboot
+## web_root_dir - typically /var/www/html
+## centos_ver - the label for this version of CentOS, used to create folders for files, typically CentOS-7
 
-- set_fact: iso_image = "centos7"
+- pause:
+    prompt: "Please ensure the CentOS Full DVD is loaded"
 
 - name: Create ISOs directory
   file:
-    path: /var/www/html/ISOs
+    path: "{{ web_root_dir }}/ISOs"
     state: directory
     mode: '0755'
 
 - name: Copy CD to ISO image
-  command: dd if=/dev/cdrom of=/var/www/html/ISOs/centos7.iso
+  command: dd if=/dev/cdrom of={{ web_root_dir }}/ISOs/{{ centos_ver }}.iso
 
 - command: mktemp -d
   delegate_to: localhost
   register: loopdir
 
 - name: mount source iso image
-  command: mount -o loop "/var/www/html/ISOs/centos7.iso" "{{ loopdir.stdout }}"
+  command: mount -o loop "{{ web_root_dir }}/ISOs/{{ centos_ver }}.iso" "{{ loopdir.stdout }}"
   delegate_to: localhost
 
 - name: Create a centos directory if it does not exist
   file:
-    path: /var/www/html/centos
-    state: directory
-    mode: '0755'
-
-- name: Create a centos 7 directory if it does not exist
-  file:
-    path: /var/www/html/centos/7
+    path: "{{ web_root_dir }}/{{ centos_ver }}"
     state: directory
     mode: '0755'
 
 - name: Create a centos7 tftp directory if it does not exist
   file:
-    path: /var/lib/tftpboot/centos7
+    path: "{{ tftp_root_dir }}/{{ centos_ver }}"
     state: directory
     mode: '0755'
 
 - name: setup centos7 web mirror
-  command: cp -a "{{ loopdir.stdout }}"  /var/www/html/centos/7/
+  command: cp -au "{{ loopdir.stdout }}/."  "{{ web_root_dir }}/{{  centos_ver }}"
 
 - name: copy files for PXE boot
-  command: cp -a "{{ loopdir.stdout }}/isolinux/"  /var/lib/tftpboot/centos7
+  command: cp -a "{{ loopdir.stdout }}/isolinux/"  "{{ tftp_root_dir }}/{{ centos_ver }}/"
 
 - name: unmount source iso image
   command: umount "{{ loopdir.stdout }}"
