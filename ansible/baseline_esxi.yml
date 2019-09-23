@@ -1,0 +1,23 @@
+---
+- hosts: esxi
+  connection: local
+  vars_prompt:
+  - name: "esxi_password"
+    prompt: "Enter your password to esxi"
+    private: yes
+  vars:
+    esxi_username: root
+    esxi_hostname: "{{ hostname }}"
+    syslog_host: syslog.localdomain
+ 
+ 
+  tasks:
+  - name: Manage Log level setting for an ESXi Host
+    vmware_host_config_manager:
+      validate_certs: false
+      hostname: "{{ hostname }}"
+      username: "{{ esxi_username }}"
+      password: "{{ esxi_password }}"
+      esxi_hostname: "{{ hostname }}"
+      options:
+        'Syslog.global.logHost': "{{ syslog_host }}"
