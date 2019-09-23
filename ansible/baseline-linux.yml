@@ -1,0 +1,158 @@
+- hosts: all
+  become: no
+ 
+  vars:
+    warning_banner: This computer system is for authorized users only. Users (authorized or unauthorized) have no explicit or implicit expectation of     privacy. Any or all uses of this system and all files on this system may be intercepted monitored recorded copied audited inspected and disclosed to authorized site Department and law enforcement personnel as well as authorized officials of other agencies both domestic and foreign., By using this system the user consents to such interception monitoring recording copying auditing inspection. By continuing to use this system you indicate your awareness of and consent to these terms and conditions of use. LOG OFF IMMEDIATELY if you DO NOT agree to the conditions stated in this warning.
+    syslog_host: syslog
+    sshd_approved_macs: hmac-sha2-512,hmac-sha2-256,hmac-sha1-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com
+    sshd_approved_ciphers: aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+    yum_repository: http://mirror/org.repo
+    org_name: myOrg
+  tasks:
+    - name: warning banner
+      copy:
+        content: "{{ warning_banner }}"
+        dest: /etc/issue
+                               
+    - name: remove Yum repositores
+      shell: rm -f /etc/yum/repos/d/CentOS-*
+                 
+    - name: install local Yum repository
+      command: curl {{ yum_repository }} -o /etc/yum.repos.d/{{ org_name}}.repo
+ 
+    - name: install packages
+        package:
+        name: {{ item }}
+        state: present
+        with_items:
+          - aide
+          - tcp_wrappers
+          - iptables-services
+          - sysstat
+          - yum-cron
+                                 
+    - name: SSH warning banner
+      lineinfile:
+        create: yes
+        dest: /etc/ssh/sshd_config
+        regexp: ^Banner
+        line: Banner /etc/issue
+        validate: sshd -t -f %s
+       
+    - name: SSH approved MACs
+      lineinfile:
+        create: yes
+        dest: /etc/ssh/sshd_config
+        regexp: ^MACs
+        line: "MACs {{ sshd_approved_macs }}"
+        validate: sshd -t -f %s
+       
+    - name: SSH Protocol 2
+      lineinfile:
+        create: yes
+        dest: /etc/ssh/sshd_config
+        regexp: "^Protocol [0-9]"
+        line: "Protocol 2"
+        validate: sshd -t -f %s
+       
+    - name: SSH approved Ciphers
+      lineinfile:
+        create: yes
+        dest: /etc/ssh/sshd_config
+        regexp: ^Ciphers
+        line: "Ciphers {{ sshd_approved_ciphers }}"
+        validate: sshd -t -f %s
+ 
+    - name: Remote rsyslog host
+      lineinfile:
+        create: yes
+        dest: /etc/rsyslog.d/loghost.conf
+        regexp: ^\\*\\.\\*
+        line: "*.* @@{{ syslog_host }}"
+        validate: sshd -t -f %s
+ 
+    - name: Check if AIDE is initialized
+      stat:
+        path: /var/lib/aide/aide.db.gz
+      register: aide_db
+     
+    - name: Initialize AIDE
+      when: aide_db.exists == False
+      command: /usr/sbin/aide --init
+     
+    - name: Move AIDE db
+      when: aide_db.exists == False
+      command: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+ 
+    - name: Configure AIDE
+      cron:
+        name: rune AIDE check:
+        minute: 05
+        hour: 04
+        weekday: 0
+        user: root
+        job: "/usr/sbin/aide --check"
+ 
+    - name: restart rsyslog
+      service:
+        name: rsyslog
+        state: restarted
+        enabled: yes
+       
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted       
+        enabled: yes
+       
+    - name: stop firewalld
+      ignore_errors: True
+      service:
+        name: firewalld
+        state: stopped
+        enabled: no
+ 
+    -name: remove firewalld
+     package:
+        name: firewalld
+        state: absent
+       
+    - name: start iptables
+      service:
+        name: iptables
+        state: restarted       
+        enabled: yes
+ 
+    - name: remove yum repositories
+      shell: rm -f /etc/yum.repos.d/CentOS-*
+ 
+    - name: Update all packages
+      package:
+        name: "*"
+        state: latest
+       
+    - name: remove yum repositories
+      shell: rm -f /etc/yum.repos.d/CentOS-*
+ 
+    - name: Update yum-cron options
+      lineinfile:
+          dest: /etc/yum/yum-cron.hourly
+          regexp: "update_messages*=*"
+          line: "update_messages = yes"
+          create: yes
+     
+    - name: Update yum-cron options
+      lineinfile:
+          dest: /etc/yum/yum-cron.hourly
+          regexp: "download_updates*=*"
+          line: "download_updates = yes"
+          create: yes
+     
+    - name: Update yum-cron options
+      lineinfile:
+          dest: /etc/yum/yum-cron.hourly
+          regexp: "apply_updates*=*"
+          line: "apply_updates = yes"
+          create: yes 
+ 
+       
