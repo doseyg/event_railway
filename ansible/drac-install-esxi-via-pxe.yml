@@ -1,0 +1,82 @@
+- hosts: esx
+  connection: local
+  become: no
+
+  vars:
+    drac_username: root
+    drac_password: calvin
+    iso_image: /var/www/html/ISOs/esxi-6.5.iso
+    my_ip: hostvars[inventory_hostname]['ansible_default_ipv4']['address']
+    tftp_boot_dir: "/var/lib/tftpboot/"
+
+  tasks:
+  - name: Get MAC Address
+    uri:
+        url:  "https://{{ hostvars[inventory_hostname]['drac_ip'] }}/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/NIC.Integrated.1-1-1"
+        user: "{{ drac_username }}"
+        password: "{{ drac_password }}"
+        method: GET
+        validate_certs: no
+        force_basic_auth: yes
+        status_code: 200
+    register: drac_nic_info
+
+  - debug:
+      msg: "{{ drac_nic_info.json.MACAddress }}"
+
+  - name: Generate pxelinux boot file
+    when: False
+    delegate_to: localhost
+    template: 
+        src: "{{ playbook_dir }}/templates/esxi-pxelinux.cfg"
+        dest: "{{ tftp_boot_dir }}/pxelinux/pxelinux.cfg/01-{{ drac_nic_info.json.MACAddress | replace(':','-') | lower }}"
+
+  - name: Create pxelinux.cfg file
+    delegate_to: localhost
+    copy:
+      dest: "{{ tftp_boot_dir }}/pxelinux/pxelinux.cfg/01-{{ drac_nic_info.json.MACAddress | replace(':','-') | lower }}"
+      content: |
+        DEFAULT menu.c32
+        MENU TITLE Automated ESXi Install
+        NOHALT 1
+        PROMPT 0
+        TIMEOUT 10
+        LABEL install
+          KERNEL ../esxi-6.5/mboot.c32
+            APPEND -c ../esxi-6.5/{{ drac_nic_info.json.MACAddress | replace(':','-') | lower }}.cfg
+        MENU LABEL something
+
+  - name: create custom ESXi boot.cfg file 
+    delegate_to: localhost
+    template:
+      src: "{{ playbook_dir }}/templates/esxi-boot.cfg.j2"
+      dest: "/var/lib/tftpboot/esxi-6.5/{{ drac_nic_info.json.MACAddress | replace(':','-') | lower }}.cfg"
+
+  - name: create custom ESXi kickstart file 
+    delegate_to: localhost
+    template:
+      src: "{{ playbook_dir }}/templates/esxi-kickstart.cfg.j2"
+      dest: "/var/www/html/kickstart/{{ drac_nic_info.json.MACAddress | replace(':','-') | lower }}.ks"
+
+  - name: Set one time boot to PXE MAC
+    uri:
+        url:  "https://{{ hostvars[inventory_hostname]['drac_ip'] }}/redfish/v1/Systems/System.Embedded.1"
+        user: "{{ drac_username }}"
+        password: "{{ drac_password }}"
+        method: PATCH
+        validate_certs: no
+        force_basic_auth: yes
+        status_code: 200
+        body_format: json
+        body: '{"Boot":{"BootSourceOverrideTarget":"Pxe","BootSourceOverrideEnabled":"Once"}}'
+  - name: Restart
+    uri:
+        url:  "https://{{ hostvars[inventory_hostname]['drac_ip'] }}/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
+        user: "{{ drac_username }}"
+        password: "{{ drac_password }}"
+        method: POST
+        validate_certs: no
+        force_basic_auth: yes
+        status_code: 204
+        body_format: json
+        body: '{"ResetType":"GracefulRestart"}'
