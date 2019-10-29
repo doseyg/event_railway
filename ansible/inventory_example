@@ -1,0 +1,17 @@
+[esx]
+esx-1 ip=192.168.1.2 subnet=192.168.1.0 netmask=255.255.255.0 gateway=192.168.1.1 drac_ip=172.16.1.2
+esx-2 ip=192.168.2.2 subnet=192.168.2.0 netmask=255.255.255.0 gateway=192.168.2.1 drac_ip=172.16.2.2
+
+[esx:vars]
+nameserver=192.168.5.5
+ntp_server=192.168.5.5
+
+[sensors]
+sensor-1 ip=192.168.1.10 subnet=192.168.1.0 netmask=255.255.255.0 gateway=192.168.1.1 esxi_ip=192.168.1.2
+sensor-2 ip=192.168.2.10 subnet=192.168.2.0 netmask=255.255.255.0 gateway=192.168.2.1 esxi_ip=192.168.2.2
+
+[sensors:vars]
+nameserver=192.168.5.5
+ntp_server=192.168.5.5
+
+
