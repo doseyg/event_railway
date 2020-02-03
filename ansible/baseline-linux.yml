@@ -24,7 +24,7 @@
       package:
         name: "{{ item }}"
         state: present
-        with_items:
+      with_items:
           - aide
           - tcp_wrappers
           - iptables-services
@@ -67,9 +67,9 @@
       lineinfile:
         create: yes
         dest: /etc/rsyslog.d/loghost.conf
-        regexp: ^\\*\\.\\*
+        regexp: '^\\*\\.\\*'
         line: "*.* @@{{ syslog_host }}"
-        validate: sshd -t -f %s
+        validate: rsyslogd -N 1 -f %s
  
     - name: Check if AIDE is initialized
       stat:
@@ -77,11 +77,11 @@
       register: aide_db
      
     - name: Initialize AIDE
-      when: aide_db.exists == False
+      when: aide_db|bool == False
       command: /usr/sbin/aide --init
      
     - name: Move AIDE db
-      when: aide_db.exists == False
+      when: aide_db|bool == False
       command: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
  
     - name: Configure AIDE
