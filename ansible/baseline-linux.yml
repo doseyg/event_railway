@@ -77,19 +77,19 @@
       register: aide_db
      
     - name: Initialize AIDE
-      when: aide_db|bool == False
+      when: aide_db.stat.exists == False
       command: /usr/sbin/aide --init
      
     - name: Move AIDE db
-      when: aide_db|bool == False
+      when: aide_db.stat.exists == False
       command: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
  
     - name: Configure AIDE
       cron:
         name: rune AIDE check
-        minute: 05
-        hour: 04
-        weekday: 0
+        minute: "05"
+        hour: "04"
+        weekday: "0"
         user: root
         job: "/usr/sbin/aide --check"
  
@@ -136,21 +136,21 @@
  
     - name: Update yum-cron options
       lineinfile:
-          dest: /etc/yum/yum-cron.hourly
+          dest: /etc/yum/yum-cron.conf
           regexp: "update_messages*=*"
           line: "update_messages = yes"
           create: yes
      
     - name: Update yum-cron options
       lineinfile:
-          dest: /etc/yum/yum-cron.hourly
+          dest: /etc/yum/yum-cron.conf
           regexp: "download_updates*=*"
           line: "download_updates = yes"
           create: yes
      
     - name: Update yum-cron options
       lineinfile:
-          dest: /etc/yum/yum-cron.hourly
+          dest: /etc/yum/yum-cron.conf
           regexp: "apply_updates*=*"
           line: "apply_updates = yes"
           create: yes 
