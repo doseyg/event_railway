@@ -21,8 +21,8 @@
       command: curl {{ yum_repository }} -o /etc/yum.repos.d/{{ org_name}}.repo
  
     - name: install packages
-        package:
-        name: {{ item }}
+      package:
+        name: "{{ item }}"
         state: present
         with_items:
           - aide
@@ -86,7 +86,7 @@
  
     - name: Configure AIDE
       cron:
-        name: rune AIDE check:
+        name: rune AIDE check
         minute: 05
         hour: 04
         weekday: 0
@@ -112,8 +112,8 @@
         state: stopped
         enabled: no
  
-    -name: remove firewalld
-     package:
+    - name: remove firewalld
+      package:
         name: firewalld
         state: absent
        
