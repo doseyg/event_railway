@@ -20,9 +20,17 @@ with open(mapping_file, newline='') as csvfile:
     for row in reader:
         if row[source_schema]:
             src_field=row[source_schema].strip()
+            dst_field="NULL"
             for schema in dest_schemas:
                 if row[schema]:
                     dst_field=row[schema].strip()
+                    continue
+            if dst_field=="NULL":
+                if on_fail=="map_to_name":
+                    print("No mapping for "+ src_field +", mapped to self")
+                    dst_field=src_field
+                else:
+                    print("No mapping for "+ src_field +", did not map")
                     continue
             if output_format == "json":
                 mapping = '"'+dst_field+'":"'+src_field+'", '
