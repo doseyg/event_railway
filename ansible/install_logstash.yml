@@ -58,7 +58,7 @@
       group: logstash
       mode: 0644
     with_fileglob:
-      - "{{ tempdir }}/logstash/conf.d/.conf"
+      - "{{ tempdir }}/logstash/conf.d/*.conf"
       
   - name: template logstash conf.d configs
     template:
