@@ -1,0 +1,9 @@
+## This file goes in /etc/sysconfig
+CAPTURE_INTERFACE=ens192
+## USER and GROUP must be a uid/gid and not a name
+USER=72
+GROUP=72
+INTERVAL=60min
+DATA_DIR=/mnt/data
+## PCAP files deleted after DATA_EXPIRE minutes
+DATA_EXPIRE=10080

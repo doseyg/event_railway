@@ -1,0 +1,11 @@
+[Unit]
+Description=netsniff-ng PCAP process
+After=network.target
+
+[Service]
+ExecStart=/sbin/netsniff-ng --in ${CAPTURE_INTERFACE} --out ${DATA_DIR} --silent --user ${USER} --group ${GROUP} --interval ${INTERVAL}
+Type=simple
+EnvironmentFile=-/etc/sysconfig/netsniff-ng
+
+[Install]
+WantedBy=multi-user.target
