@@ -15,7 +15,8 @@ Open eventvwr, right click on Forwarded Events, Go to properties, Click the Subs
 # Enable Computers to send WEF
 ## Import GPO
 - Create a new GPO object named WEF
-- Right click on the WEF GPO and choose Restore from Backup
+- Right click on the WEF GPO and choose Import
+-- You will have to fix the user and group permissions, and also adjust the WEF server URL
 
 ## Create your own GPO
 This goes in Computer>Policies>Admin Templates>Windows Components>Event Forwarding
