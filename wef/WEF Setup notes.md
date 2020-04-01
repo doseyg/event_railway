@@ -1,4 +1,5 @@
 # On the Windows Event Collector Server
+## Enable the WinRM and WEC service
 - winrm qc
 - wecutil qc
 
@@ -11,25 +12,31 @@ Open eventvwr, right click on Forwarded Events, Go to properties, Click the Subs
 -- Choose Windows Events
 -- Choose Windows Powershell by expanding Application and Services Logs
 
+# Enable Computers to send WEF
+## Import GPO
 
-In GPO
+## Create your own GPO
 This goes in Computer>Policies>Admin Templates>Windows Components>Event Forwarding
 Server=http://hostname:5985/wsman/SubscriptionManager/WEC,Refresh=60
 
+Add the NETWORK SERVICE account to the Event Log Readers Group.
+
+Start the WinRM service
+
 dsacls “CN=AdminSDHolder,CN=System,DC=yourdomainname,DC=tld” /G “S-1-5-20:WS;Validated write to service principal name”
 
-If you don't want to use Forwarded Events for everything
+## Import custom event channles (Optional)
+If you don't want to use Forwarded Events for everything, then do this
 
-Copy the .dll and .man file to C:\Windows\system23
+- Copy the CustomEventChannles.dll and CustomEventChannles.man file to C:\Windows\system32
+- To import them run the command wevtutil im c:\Windows\system32\CustomEventChannels.man
 
-### Copy .man and .dll to server and run
-wevtutil im c:\Windows\system32\CustomEventChannels.man
+### Create your own custom event channles (optional)
+If you want some different event channels than what I created.
+Edit the CustomEventChannles.man
+Then to build your own custom files, run these commands
 
-### Load .man file to C:\ECMan
-
-Optional: To build your own custom files, run these commands
-
-cd\ECMan
+cd \ECMan
 "C:\Program Files (x86)\Windows Kits\8.1\bin\x64\mc.exe" C:\ECMan\CustomEventChannels.man
 "C:\Program Files (x86)\Windows Kits\8.1\bin\x64\mc.exe" -css CustomEventChannels.DummyEvent C:\ECMan\CustomEventChannels.man
 "C:\Program Files (x86)\Windows Kits\8.1\bin\x64\rc.exe" C:\ECMan\CustomEventChannels.rc
