@@ -1,6 +1,9 @@
+On the Windows Event Collector Server
 winrm qc
 wecutil qc
 
+In GPO
+This goes in Computer>Policies>Admin Templates>Windows Components>Event Forwarding
 Server=http://hostname:5985/wsman/SubscriptionManager/WEC,Refresh=60
 
 dsacls “CN=AdminSDHolder,CN=System,DC=yourdomainname,DC=tld” /G “S-1-5-20:WS;Validated write to service principal name”
