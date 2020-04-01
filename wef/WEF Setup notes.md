@@ -1,6 +1,16 @@
-On the Windows Event Collector Server
-winrm qc
-wecutil qc
+# On the Windows Event Collector Server
+- winrm qc
+- wecutil qc
+
+## Configure an event subscriptiuon channel
+Open eventvwr, right click on Forwarded Events, Go to properties, Click the Subscriptions tab at the top
+- Click Create
+- Choose Source computer initiated, and type Domain Computers
+-- optionally also choose Domain Controllers, which by default are not included in Domain Computers
+- Click Select Events, and then By Log 
+-- Choose Windows Events
+-- Choose Windows Powershell by expanding Application and Services Logs
+
 
 In GPO
 This goes in Computer>Policies>Admin Templates>Windows Components>Event Forwarding
