@@ -19,12 +19,31 @@ Open eventvwr, right click on Forwarded Events, Go to properties, Click the Subs
 -- You will have to fix the user and group permissions, and also adjust the WEF server URL
 
 ## Create your own GPO
-This goes in Computer>Policies>Admin Templates>Windows Components>Event Forwarding
-Server=http://hostname:5985/wsman/SubscriptionManager/WEC,Refresh=60
+Computer Configuration->Policies->Admin Templates->Windows Components->Event Forwarding
+Configure the computers to use the subscritions created above
+- Configure target Subscrition Manager
+- click enabled
+- click Show
+- type this in the box, editing as approprioate: Server=http://hostname:5985/wsman/SubscriptionManager/WEC,Refresh=60
 
-Add the NETWORK SERVICE account to the Event Log Readers Group.
+Computer Configuration->Policies->Windows Settings->Security Settings->Restricted Groups
+Add the NETWORK SERVICE account to the Event Log Readers Group. 
+- right click and choose Add Group
+- Browse for Event Log Readers
+- click Add under Members of this group
+- type NETWORK SERVICE, you cannot browse for it because it is a local user, not a domain account.
 
 Start the WinRM service
+Computer Configuration>Preferences>Control Panel Settings>Services
+- right click and choose new service
+- set startup type to automatic delayed
+- click the 3 dots by Service Name to browse to WinRM
+- set the Service Action to Start Service
+
+Link the GPO
+- Right click on the root of your domain and link to an existing GPO
+- choose WEF
+
 
 dsacls “CN=AdminSDHolder,CN=System,DC=yourdomainname,DC=tld” /G “S-1-5-20:WS;Validated write to service principal name”
 
