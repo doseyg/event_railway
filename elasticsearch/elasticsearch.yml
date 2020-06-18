@@ -1,0 +1,29 @@
+cluster.name: cluster-elk
+node.name: ${HOSTNAME}
+path.data: /mnt/data/elasticsearch
+path.logs: /var/log/elasticsearch
+path.repo: ["/mnt"]
+network.host: 0.0.0.0
+#discovery.seed_hosts: ["node1"]
+discovery.zen.minimum_master_nodes: 1
+discovery.type: single-node
+#cluster.initial_master_nodes: ["node1","node2"]
+node.ml: false
+node.master: true
+node.ingest: true
+node.data: true
+node.attr.node_type: hot
+node.attr.box_type: virtual
+node.attr.disk: local_ssd
+node.attr.site: text
+node.attr.mission: text
+ 
+xpack.security.enabled: true
+xpack.ml.enabled: false
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.key: /etc/elasticsearch/${HOSTNAME}.key
+xpack.security.transport.ssl.certificate: /etc/elasticsearch/${HOSTNAME}.crt
+xpack.security.transport.ssl.certificate_authorities: /etc/elasticsearch/ca-cert.crt
+xpack.security.transport.ssl.verification_mode: certificate
+ 
+reindex.remote.whitelist: "192.168.*:9200"
