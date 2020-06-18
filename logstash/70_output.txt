@@ -5,6 +5,12 @@ output {
 			index => "%{sendto_index}-%{+YYYY.MM.DD}"
 		}
 	}
+	else if [_index] {
+		elasticsearch {
+			hosts => ["127.0.0.1"]
+			index => "%{_index}"
+		}
+	}	
 	else {
 		elasticsearch {
 			hosts => ["127.0.0.1"]
