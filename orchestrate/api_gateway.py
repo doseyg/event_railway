@@ -12,11 +12,9 @@ print ("Content-type: text/html\r\n\r\n")
 
 ### Config variables ###
 logfile='file.log'
-interactive=False
+interactive=True
 enabled_actions=('kill_process') ## A list of enabled action names (without the .py extension)
-
-
-
+modules_dir="/var/www/cgi-bin/modules/"
 
 try:
     logging.basicConfig(level=logging.DEBUG,filename=logfile)
@@ -47,7 +45,7 @@ for loader, name, is_pkg in pkgutil.walk_packages(__path__):
         globals()[name] = value
         __all__.append(name) """
     try:
-        file=open("modules/__init__.py", "r").read()
+        file=open(modules_dir + "/__init__.py", "r").read()
     except: 
         file=""
         logging.info("__init__.py in modules directory could not be read")
@@ -56,7 +54,7 @@ for loader, name, is_pkg in pkgutil.walk_packages(__path__):
     else:
         try:
             logging.info("__init__.py in modules directory needs updating")
-            file=open("modules/__init__.py", "w")
+            file=open( modules_dir + "/__init__.py", "w")
             file.write(modules_init)
             file.close()
             logging.info("__init__.py in modules directory successfully updated")
@@ -74,9 +72,6 @@ def request_id(form):
         o_id = uuid.uuid4()
     return str(o_id)
 
-
-#for param in os.environ.keys():
-#    print(str(param) +" is "+str(os.environ[param])+"<br>")
 
 def get_environ_info():
     ### This function tries to get the relevant info from the OS we need. Because each web server and OS supplies the information differently, this function works through the possible variations.
@@ -132,42 +127,23 @@ if interactive==True:
     if form.getvalue("confirm") == "True":
         print("Confirmed<br>")
     else:
-        print("please confirm you your action<br>")
+        print("Please confirm you your action:<br>")
+        print("<table>")
+        for key in form.keys():
+                print("<tr><td>" + str(key)+" </td><td> "+ str(form.getvalue(key)) + "</td></tr>")
+        print("</table>")
         print("<a href="+my_url+"&confirm=True>Confirm</a>")
         exit()
 
-#if action in sys.modules:
-#    print("Action is defined")
-#else:
-#    print("Unknown Action")
-#    logging.error(log_prefix + "undefined action: " + str(action))
-#    exit()
-
 if action in enabled_actions:
     import importlib
-    sys.path.append("/var/www/cgi-bin/modules/")
-
-    print("Action is enabled")
-#    from modules import kill_process as action_module
-#    action_module = importlib.import_module('kill_process')
-#    import kill_process as action_module
-#    from action import my_vars
-#    my_action = __import__('modules.' + action)
-#    print(kill_process.my_vars())
-#    print(my_action.my_vars())
-#    module_name = "modules."+action
+    sys.path.append(modules_dir)
+    print("Executing action: " + str(action))
     action_module = __import__(action,fromlist=['*'])
-#    print(action_module)
-#    print(action_module.kill_process.my_vars())
     print(sys.modules[action].action_class.required_vars())
-#    action_vars = sys.modules[action].my_vars()
-#    action_vars = module.my_vars()
-#    print(action_vars)
-    ### This works
-#    from modules import kill_process as my_action
-#    print(my_action.my_vars())
+    sys.modules[action].action_class.do_action(form,logging)
 else: 
-    print("Unknown Action")
+    print("Unknown Action: "+ str(action))
     logging.error(log_prefix + "undefined action: " + str(action))
     exit()
 
