@@ -1,6 +1,6 @@
 ## Web page to provide simple management interface for user's to manage their own running user VM's
 Just a front-end to some ESX API calls. User's can clone their own copy of configured VM templates, and then start, stop, delete and re-deploy it. 
-![Screenshot](/doseyg/eent_railway/vm_manager/screenshot.png)
+![Screenshot](/doseyg/event_railway/vm_manager/screenshot.png)
 ### Setup
 #### ESX Connection
 Complete the variables esx_host(ip), esx_user, esx_port(443), and esx_password at the top of the script.
