@@ -1,5 +1,6 @@
 ## Web page to provide simple management interface for user's to manage their own running user VM's
 Just a front-end to some ESX API calls. User's can clone their own copy of configured VM templates, and then start, stop, delete and re-deploy it. 
+#### Screenshot Example
 ![Screenshot](/vm_manager/screenshot.png)
 ### Setup
 #### ESX Connection
