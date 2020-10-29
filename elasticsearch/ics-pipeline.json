@@ -1,0 +1,12 @@
+PUT _ingest/pipeline/ics-pipeline
+{
+  "description": "converts the content of the id field to an integer",
+  "processors" : [
+    {
+      "convert" : {
+        "field" : "layers.eth.eth_eth_type",
+        "type": "integer"
+      }
+    }
+  ]
+}
