@@ -1,0 +1,56 @@
+{
+    "index_patterns": ["ics-packets-*"],
+    "settings": {
+        "index.mapping.total_fields.limit": 1000000,
+        "index.default_pipeline": "ics-packets-pipeline"
+    },
+    "mappings": {
+        "dynamic": true,
+        "properties": {
+            "timestamp": {
+                "type": "date"
+            },
+            "layers": {
+                "properties": {
+                    "frame": {
+                        "properties": {
+                            "frame_frame_time": {
+                                "type": "date"
+                            }
+                        }
+                    },
+                     "tcp": {
+                        "properties": {
+                            "tcp_tcp_srcport": {
+                                "type": "integer"
+                            },
+                            "tcp_tcp_dstport": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "udp": {
+                        "properties": {
+                            "udp_udp_srcport": {
+                                "type": "integer"
+                            },
+                            "udp_udp_dstport": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "ip": {
+                        "properties": {
+                            "ip_ip_dst": {
+                                "type": "ip"
+                            },
+                            "ip_ip_src": {
+                                "type": "ip"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
