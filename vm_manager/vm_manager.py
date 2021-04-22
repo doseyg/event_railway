@@ -107,7 +107,12 @@ def connect_esx(logging):
     atexit.register(Disconnect, si)
     return si
 
-
+def get_all_objs(content, vimtype):
+        obj = {}
+        container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
+        for managed_object_ref in container.view:
+                obj.update({managed_object_ref: managed_object_ref.name})
+        return obj
 
 def get_vm_list(user):
     global config
@@ -130,6 +135,7 @@ def get_vm_list(user):
         datacenter = child
         vmFolder = datacenter.vmFolder
         vmList = vmFolder.childEntity
+        #vmList=get_all_objs(content, [vim.VirtualMachine])
         if user in user_config["admins"]:
             print("<b>!!! ADMIN VIEW !!!</b> You can see everyone's systems. Be careful!<table>")
         else:
