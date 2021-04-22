@@ -324,7 +324,7 @@ def create_dhcp_reservation(host,mac):
         logging.info(log_prefix + "user "+user+" created dhcp reservation for "+host+" with mac "+str(mac)+" and ip "+str(ip))
         ## If local DHCP, restart the service to re-read the new combined config
         if config["remote_dhcp"] == False:
-            subprocess.call("sudo","/usr/sbin/service","dhcpd","restart",shell=True)
+            subprocess.call(["sudo","/usr/sbin/service","dhcpd","restart"],shell=True)
         ## If a remote DHCP server, copy the combined config file and restart the remotse dhcp service
         if config["remote_dhcp"] == True:
             ### Must Have SSH keys setup
