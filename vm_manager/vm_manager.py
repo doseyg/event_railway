@@ -308,7 +308,7 @@ def create_dhcp_reservation(host,mac):
             continue
     logging.debug("allocating new IP: "+str(ip))
     try:
-        reservation = "host "+str(host)+" {\nhardware ethernet "+str(mac)+";\nfixed-address "+str(ip)+"\n}\n"
+        reservation = "host "+str(host)+" {\nhardware ethernet "+str(mac)+";\nfixed-address "+str(ip)+";\n}\n"
         logging.debug("reservation content: "+str(reservation))
         f = open(path, "w")
         f.write(reservation)
