@@ -164,6 +164,9 @@ def get_vm_list(user):
     return(provisioned)
 
 def make_rdp_link(host):
+    (ip,mac) = get_dhcp_reservation(host)
+    if ip != "":
+        host = ip
     print("Content-type: application/octect-stream; name = \""+host+".rdp\"")
     print("Content-disposition: attachment; filename = \""+host+".rdp\"\r\n")
     print(""" screen mode id:i:2
@@ -180,6 +183,9 @@ username:s:user
     print("full address:s:"+host)
 
 def make_vnc_link(host):
+    (ip,mac) = get_dhcp_reservation(host)
+    if ip != "":
+        host = ip
     print("Content-type: application/octect-stream; name = \""+host+".vnc\"")
     print("Content-disposition: attachment; filename = \""+host+".vnc\"\r\n\r\n")
     print("ConnMethod=tcp\r\nHost="+host+"\r\nRelativePtr=0\r\n")
@@ -334,6 +340,24 @@ def create_dhcp_reservation(host,mac):
     except Exception as e:
         logging.error("ERROR in DHCP function: "+str(e))
 
+def get_dhcp_reservation(host):
+    global config
+    ip=""
+    mac=""
+    reservation_file = config["dhcp_config_path"] + "/" host + ".conf"
+    with open(reservation_file,'r') as f:
+        mac_re = re.compile("hardware ethernet (.*);")
+        ip_re = re.compile("fixed-address (.*);")
+        for line in f.readlines():
+            if 'hardware' in line:
+                result = mac_re.search(line)
+                mac = result.group(1)
+            if 'fixed-address' in line:
+                result = ip_re.search(line)
+                ip = result.group(1)
+    f.close()
+    return(ip,mac)
+        
 
 
 my_url,my_urn,user,remote_addr = get_environ_info()
