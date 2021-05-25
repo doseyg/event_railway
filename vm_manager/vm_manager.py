@@ -345,7 +345,8 @@ def get_dhcp_reservation(host):
     ip=""
     mac=""
     reservation_file = config["dhcp_config_path"] + "/" host + ".conf"
-    with open(reservation_file,'r') as f:
+    try:
+      with open(reservation_file,'r') as f:
         mac_re = re.compile("hardware ethernet (.*);")
         ip_re = re.compile("fixed-address (.*);")
         for line in f.readlines():
@@ -355,7 +356,11 @@ def get_dhcp_reservation(host):
             if 'fixed-address' in line:
                 result = ip_re.search(line)
                 ip = result.group(1)
-    f.close()
+      f.close()
+    except:
+      logging.warn(log_prefix + "Failed to read IP from dhcp configuration for host "+ host +", using hostname instead.")
+      ip=""
+      mac=""
     return(ip,mac)
         
 
