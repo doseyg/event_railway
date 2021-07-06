@@ -310,8 +310,9 @@ def create_dhcp_reservation(host,mac):
     logging.debug("currently used IP: "+str(existing_dhcp_ip))
     ## Find an IP in the subnet not already used
     for ip in netaddr.iter_iprange(config["dhcp_start"],config["dhcp_end"]):
-        if ip not in existing_dhcp_ip:
-            continue
+        this_ip = ip + ";"
+        if this_ip not in existing_dhcp_ip:
+            break
     logging.debug("allocating new IP: "+str(ip))
     try:
         reservation = "host "+str(host)+" {\nhardware ethernet "+str(mac)+";\nfixed-address "+str(ip)+";\n}\n"
